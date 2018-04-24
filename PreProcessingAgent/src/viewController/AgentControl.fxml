@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="308.0" prefWidth="455.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="viewController.ACPController">
+   <children>
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#f6f7f8" height="200.0" layoutX="241.0" layoutY="91.0" stroke="BLACK" strokeType="INSIDE" width="200.0" />
+      <Label layoutX="14.0" layoutY="14.0" text="List of activating agent(s)" />
+      <ListView fx:id="list_agents" layoutX="14.0" layoutY="31.0" prefHeight="132.0" prefWidth="215.0" />
+      <CheckBox fx:id="sys_recomm_check" layoutX="243.0" layoutY="62.0" mnemonicParsing="false" onAction="#sys_recomm" prefHeight="17.0" prefWidth="139.0" text="System Recommend" />
+      <CheckBox fx:id="enable_pp_check" layoutX="243.0" layoutY="31.0" mnemonicParsing="false" onAction="#enable_pp" text="Enable Pre-Processing" />
+      <Label layoutX="14.0" layoutY="182.0" text="Minimun Accurate Value" />
+      <TextField fx:id="min_match" layoutX="170.0" layoutY="178.0" prefHeight="25.0" prefWidth="59.0" text="0" />
+      <Button fx:id="btn_save" layoutX="14.0" layoutY="269.0" mnemonicParsing="false" onAction="#save_setting" prefHeight="25.0" prefWidth="59.0" text="Save" />
+      <CheckBox fx:id="canny_check" layoutX="255.0" layoutY="104.0" mnemonicParsing="false" onAction="#canny_ag" text="Canny Agent" />
+      <CheckBox fx:id="harris_check" layoutX="255.0" layoutY="133.0" mnemonicParsing="false" onAction="#harris_ag" text="Harris Agent" />
+      <CheckBox fx:id="shi_tomasi_check" layoutX="255.0" layoutY="163.0" mnemonicParsing="false" onAction="#shi_tomasi_ag" text="Shi-Tomasi Agent" />
+      <CheckBox fx:id="select_all_check" layoutX="255.0" layoutY="195.0" mnemonicParsing="false" onAction="#select_all" text="Select All" />
+   </children>
+</AnchorPane>

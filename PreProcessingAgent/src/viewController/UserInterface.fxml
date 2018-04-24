@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="441.0" prefWidth="595.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="viewController.UIController">
+   <children>
+      <Button fx:id="process_img" layoutX="26.0" layoutY="25.0" mnemonicParsing="false" onAction="#trigger_process_img" prefHeight="25.0" prefWidth="107.0" text="Process Image" />
+      <Button fx:id="choose_img" layoutX="159.0" layoutY="13.0" mnemonicParsing="false" onAction="#browse_img" text="Choose Scene Image" />
+      <Separator layoutX="4.0" layoutY="80.0" prefHeight="17.0" prefWidth="581.0" />
+      <HBox fx:id="hbox_ori_img" layoutX="22.0" layoutY="113.0" prefHeight="100.0" prefWidth="200.0">
+         <children>
+            <ImageView fx:id="ori_img" fitHeight="108.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
+         </children>
+      </HBox>
+      <Label layoutX="22.0" layoutY="97.0" text="Scene Image" />
+      <Label layoutX="261.0" layoutY="97.0" text="Result" />
+      <Separator layoutX="6.0" layoutY="352.0" prefHeight="25.0" prefWidth="581.0" />
+      <Label layoutX="376.0" layoutY="381.0" text="Status" />
+      <Label layoutX="18.0" layoutY="381.0" prefHeight="17.0" prefWidth="49.0" text="Accuracy" />
+      <TextField fx:id="status" editable="false" layoutX="418.0" layoutY="377.0" />
+      <TextField fx:id="txt_accuracy" editable="false" layoutX="72.0" layoutY="377.0" prefHeight="25.0" prefWidth="114.0" />
+      <TextField fx:id="img_path" editable="false" layoutX="301.0" layoutY="13.0" prefHeight="25.0" prefWidth="284.0" />
+      <Label layoutX="20.0" layoutY="235.0" text="Object Image" />
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#1fff27" height="17.0" layoutX="17.0" layoutY="409.0" stroke="BLACK" strokeType="INSIDE" width="18.0" />
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ff1f1f" height="17.0" layoutX="186.0" layoutY="409.0" stroke="BLACK" strokeType="INSIDE" width="18.0" />
+      <Label layoutX="42.0" layoutY="409.0" text="Above  minimum match" />
+      <Label layoutX="214.0" layoutY="409.0" prefHeight="17.0" prefWidth="127.0" text="Below minimum match" />
+      <HBox fx:id="hbox_obj" layoutX="22.0" layoutY="252.0" prefHeight="100.0" prefWidth="200.0">
+         <children>
+            <ImageView fx:id="view_selected_obj" fitHeight="99.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
+         </children>
+      </HBox>
+      <HBox fx:id="hbox_result" layoutX="263.0" layoutY="135.0" prefHeight="218.0" prefWidth="309.0">
+         <children>
+            <ImageView fx:id="morpho_img" fitHeight="218.0" fitWidth="309.0" pickOnBounds="true" preserveRatio="true" />
+         </children>
+      </HBox>
+      <Button fx:id="choose_obj" layoutX="160.0" layoutY="50.0" mnemonicParsing="false" onAction="#browse_obj" prefHeight="25.0" prefWidth="127.0" text="Choose Object Image" />
+      <TextField fx:id="obj_path" layoutX="301.0" layoutY="50.0" prefHeight="25.0" prefWidth="284.0" />
+      <Label layoutX="192.0" layoutY="381.0" text="Time Taken" />
+      <TextField fx:id="txt_time" layoutX="257.0" layoutY="377.0" prefHeight="25.0" prefWidth="101.0" />
+   </children>
+</AnchorPane>

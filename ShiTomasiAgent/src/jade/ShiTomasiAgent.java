@@ -106,7 +106,6 @@ public class ShiTomasiAgent extends Agent {
 						File scene_file = new File(ImageModel.get_path(),
 								ImageModel.get_file_name() + "(shi_tomasi).txt");
 						FileUtils.writeLines(scene_file, scene_key_points);
-
 						List<KeyPoint> object_key_points = controller.doShiTomasi(ObjectModel.get_path(),
 								ObjectModel.get_file_name());
 						File object_file = new File(ObjectModel.get_path(),

@@ -76,17 +76,11 @@ public class CannyController {
 				if (rect.height > 10) {
 					Imgproc.rectangle(image, new Point(rect.x, rect.y),
 							new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(0, 0, 255));
-
-					Imgproc.circle(image, new Point((rect.x + rect.width) / 2, (rect.y + rect.height) / 2), 5,
-							new Scalar(0, 0, 255), 2, 8, 0);
-					KeyPointList.add(new KeyPoint((rect.x + rect.width) / 2, (rect.y + rect.height) / 2, -1));
+					KeyPointList.add(new KeyPoint((rect.x + (rect.width + rect.x)) / 2,
+							(rect.y + (rect.height + rect.y)) / 2, -1));
 				}
 			}
 		}
-
-		// using Canny's output as a mask, display the result
-		Mat dest = new Mat();
-		image.copyTo(dest, edges);
 		return KeyPointList;
 	}
 

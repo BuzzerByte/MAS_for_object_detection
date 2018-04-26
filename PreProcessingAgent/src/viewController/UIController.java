@@ -103,15 +103,30 @@ public class UIController {
 			alert.show();
 		} else {
 			if (AgentModel.getPP()) {
+
 				Mat blur_img = smoothing(ImageModel.get_mat_img());
 				Mat contrast_enhance_img = contrast_enhancement(blur_img);
 				Mat down_sampling_img = down_sampling(contrast_enhance_img);
 				Mat morphological_img = morphological_operation(down_sampling_img);
 				Loader.save(morphological_img, getFileName(), getFilePath());
+				Imgcodecs.imwrite(ImageModel.get_path() + "/" + ImageModel.get_file_name() + "PP" + ".jpg",
+						morphological_img);
+				Loader.save(morphological_img, ImageModel.get_file_name() + "PP" + ".jpg", ImageModel.get_path());
+
+				Mat obj_blur_img = smoothing(ObjectModel.get_mat_img());
+				Mat obj_contrast_enhance_img = contrast_enhancement(obj_blur_img);
+				Mat obj_down_sampling_img = down_sampling(obj_contrast_enhance_img);
+				Mat obj_morphological_img = morphological_operation(obj_down_sampling_img);
+				Imgcodecs.imwrite(ObjectModel.get_path() + "/" + ObjectModel.get_file_name() + "PP" + ".jpg",
+						obj_morphological_img);
+				ObjectModel.set_file_name(ObjectModel.get_file_name() + "PP" + ".jpg");
+				agent.sendImageInfo(getFileName(), getFilePath());
 			} else {
+				ObjectModel.set_file_name(ObjectModel.get_file_name().replace("PP.jpg", ""));
 				Loader.save(ImageModel.get_mat_img(), getFileName(), getFilePath());
+				agent.sendImageInfo(getFileName(), getFilePath());
 			}
-			agent.sendImageInfo(getFileName(), getFilePath());
+
 		}
 	}
 
@@ -122,12 +137,12 @@ public class UIController {
 	protected void browse_img() {
 		File file1 = fileChooser.showOpenDialog(null);
 		if (file1 != null) {
-			String rel_path = file1.getParent().replace("C:\\", "\\");
+			String rel_path = file1.getParent().replace("C:\\", "/");
 			rel_path = rel_path.replaceAll(Pattern.quote("\\"), "/");
-			img_path.setText(rel_path);
+			img_path.setText(rel_path + "/" + file1.getName());
 			setFileName(file1.getName());
 			setFilePath(rel_path);
-			Mat oriImage = Imgcodecs.imread(rel_path + "\\" + file1.getName());
+			Mat oriImage = Imgcodecs.imread(rel_path + "/" + file1.getName());
 			Image showOriImg = Utils.mat2Image(oriImage);
 			updateImageView(ori_img, showOriImg);
 			ImageModel.set_mat_img(oriImage);
@@ -140,14 +155,15 @@ public class UIController {
 	protected void browse_obj() {
 		File file1 = fileChooser.showOpenDialog(null);
 		if (file1 != null) {
-			String rel_path = file1.getParent().replace("C:\\", "\\");
+			String rel_path = file1.getParent().replace("C:\\", "/");
 			rel_path = rel_path.replaceAll(Pattern.quote("\\"), "/");
 			System.out.println(rel_path);
-			obj_path.setText(rel_path);
+			obj_path.setText(rel_path + "/" + file1.getName());
 			ObjectModel.set_path(rel_path);
 			ObjectModel.set_file_name(file1.getName());
-			Mat obj = Imgcodecs.imread(rel_path + "\\" + file1.getName());
+			Mat obj = Imgcodecs.imread(rel_path + "/" + file1.getName());
 
+			ObjectModel.set_mat_img(obj);
 			Image selected_obj = Utils.mat2Image(obj);
 			updateImageView(view_selected_obj, selected_obj);
 		} else {
@@ -170,7 +186,7 @@ public class UIController {
 	private Mat contrast_enhancement(Mat image) {
 		Mat dest = new Mat(image.rows(), image.cols(), image.type());
 		// applying brightness enhancement
-		image.convertTo(dest, -2, alpha, beta);
+		image.convertTo(dest, -1, alpha, beta);
 		return dest;
 	}
 

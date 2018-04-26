@@ -83,9 +83,6 @@ public class ShiTomasiController {
 			Imgproc.circle(image, new Point((int) cornerpoints[i].x, (int) cornerpoints[i].y), 5, circleColor, 2, 8, 0);
 			KeyPointList.add(new KeyPoint((int) cornerpoints[i].x, (int) cornerpoints[i].y, -1));
 		}
-
-		Mat dest = new Mat();
-		image.copyTo(dest, sceneGrayScale);
 		return KeyPointList;
 	}
 

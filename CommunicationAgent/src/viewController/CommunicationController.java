@@ -224,7 +224,7 @@ public class CommunicationController {
 			Features2d.drawMatches(objectImage, objectKeyPoints, sceneImage, sceneKeyPoints, goodMatches, matchoutput,
 					matchestColor, newKeypointColor, new MatOfByte(), 2);
 
-			Imgcodecs.imwrite(ImageModel.get_path() + "\\" + ImageModel.get_file_name() + hybrid_tag + ".jpg",
+			Imgcodecs.imwrite(ImageModel.get_path() + "/" + ImageModel.get_file_name() + hybrid_tag + ".jpg",
 					outputImage);
 			// Imgcodecs.imwrite("images//matchoutput.jpg", matchoutput);
 			// Imgcodecs.imwrite("images//img.jpg", img);
@@ -380,7 +380,7 @@ public class CommunicationController {
 			Features2d.drawMatches(objectImage, objectKeyPoints, sceneImage, sceneKeyPoints, goodMatches, matchoutput,
 					matchestColor, newKeypointColor, new MatOfByte(), 2);
 
-			Imgcodecs.imwrite(ImageModel.get_path() + "\\" + ImageModel.get_file_name() + hybrid_tag + ".jpg",
+			Imgcodecs.imwrite(ImageModel.get_path() + "/" + ImageModel.get_file_name() + hybrid_tag + ".jpg",
 					outputImage);
 		} else {
 

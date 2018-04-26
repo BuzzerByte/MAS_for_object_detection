@@ -131,7 +131,7 @@ public class PreProcessingAgent extends Agent {
 								ImageModel.getType() + "-" + ImageModel.get_path() + "-" + ImageModel.get_file_name());
 				System.out.println(img_info);
 				msg.setContent(img_info);
-				// }
+
 				msg.setConversationId("img_info");
 				send(msg);
 				System.out.println("Image information send");
@@ -157,10 +157,15 @@ public class PreProcessingAgent extends Agent {
 					end_time = System.currentTimeMillis();
 					time_taken = end_time - start_time;
 					controller.txt_time.setText(String.valueOf((double) (time_taken / 1000) % 60) + "(s)");
+					controller.status.setText("Processing done");
 					Mat mat_img = Imgcodecs
-							.imread(ImageModel.get_path() + "\\" + ImageModel.get_file_name() + hybrid_img + ".jpg");
+							.imread(ImageModel.get_path() + "/" + ImageModel.get_file_name() + hybrid_img + ".jpg");
 					Image result_img = Utils.mat2Image(mat_img);
-					controller.txt_accuracy.setStyle(UIController.getColor());
+					if (Double.valueOf(accuracy) >= Double.valueOf(ACPController.getMinMatch())) {
+						controller.txt_accuracy.setStyle("-fx-text-inner-color: green;");
+					} else {
+						controller.txt_accuracy.setStyle("-fx-text-inner-color: red;");
+					}
 					controller.txt_accuracy.setFont(Font.font("Verdana", 15));
 					double dacc = Double.valueOf(accuracy);
 					if (Double.valueOf(dacc) > 100) {
@@ -169,8 +174,6 @@ public class PreProcessingAgent extends Agent {
 					controller.txt_accuracy.setText(String.format("%.2f", Double.valueOf(dacc)) + "%");
 
 					UIController.updateImageView(controller.morpho_img, result_img);
-
-					controller.status.setText("Processing done");
 				} else {
 					block();
 				}

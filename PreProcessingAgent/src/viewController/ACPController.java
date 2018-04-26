@@ -34,7 +34,7 @@ public class ACPController {
 	public ListView<String> list_agents = new ListView<String>();
 	public static ObservableList<String> data = FXCollections.observableArrayList("Pre-processing agent activated");
 	private static PreProcessingAgent agent;
-	private static String min_accurate_val;
+	private static String min_accurate_val = "0";
 
 	/*
 	 * Set the agent for agent control panel controller

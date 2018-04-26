@@ -78,17 +78,13 @@ public class HarrisController {
 
 		List<KeyPoint> KeyPointList = new ArrayList<KeyPoint>();
 		// map points to every corner detected
-		for (int j = 0; j < dst_norm.rows(); j++) {
-			for (int i = 0; i < dst_norm.cols(); i++) {
-				if ((int) dst_norm.get(j, i)[0] > 155) {
-					Imgproc.circle(image, new Point(i, j), 5, new Scalar(0, 0, 255), 2, 8, 0);
+		for (int j = 0; j < dst_norm_scaled.rows(); j++) {
+			for (int i = 0; i < dst_norm_scaled.cols(); i++) {
+				if ((int) dst_norm_scaled.get(j, i)[0] > 150) {
 					KeyPointList.add(new KeyPoint(i, j, -1));
 				}
 			}
 		}
-
-		Mat dest = new Mat();
-		image.copyTo(dest, dst_norm_scaled);
 		return KeyPointList;
 	}
 

@@ -14,12 +14,15 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import model.AgentModel;
+import model.DirectoryModel;
 import model.ImageModel;
 import model.Loader;
 import model.MessageModel;
@@ -64,8 +67,13 @@ public class UIController {
 	public TextField obj_path;
 	@FXML
 	public TextField txt_time;
+	@FXML
+	public CheckBox dataset;
+	@FXML
+	public Label accuracy_label;
 
 	final FileChooser fileChooser = new FileChooser();
+	final DirectoryChooser dirChooser = new DirectoryChooser();
 	static double alpha = 1;
 	static double beta = 50;
 	private static PreProcessingAgent agent;
@@ -74,6 +82,7 @@ public class UIController {
 	private static String file_name;
 	private static String accuracy;
 	private static String color;
+	public static Boolean dataset_selected = false;
 
 	/*
 	 * Set the agent for user interface controller
@@ -109,24 +118,53 @@ public class UIController {
 				Mat down_sampling_img = down_sampling(contrast_enhance_img);
 				Mat morphological_img = morphological_operation(down_sampling_img);
 				Loader.save(morphological_img, getFileName(), getFilePath());
-				Imgcodecs.imwrite(ImageModel.get_path() + "/" + ImageModel.get_file_name() + "PP" + ".jpg",
-						morphological_img);
-				Loader.save(morphological_img, ImageModel.get_file_name() + "PP" + ".jpg", ImageModel.get_path());
+				if (ImageModel.get_file_name().contains("PP")) {
+					Imgcodecs.imwrite(ImageModel.get_path() + "/results/" + ImageModel.get_file_name(),
+							morphological_img);
+					Loader.save(morphological_img, ImageModel.get_file_name(), ImageModel.get_path());
+				} else {
+					Imgcodecs.imwrite(ImageModel.get_path() + "/results/PP" + ImageModel.get_file_name(),
+							morphological_img);
+					Loader.save(morphological_img, "PP" + ImageModel.get_file_name(), ImageModel.get_path());
+				}
 
 				Mat obj_blur_img = smoothing(ObjectModel.get_mat_img());
 				Mat obj_contrast_enhance_img = contrast_enhancement(obj_blur_img);
 				Mat obj_down_sampling_img = down_sampling(obj_contrast_enhance_img);
 				Mat obj_morphological_img = morphological_operation(obj_down_sampling_img);
-				Imgcodecs.imwrite(ObjectModel.get_path() + "/" + ObjectModel.get_file_name() + "PP" + ".jpg",
-						obj_morphological_img);
-				ObjectModel.set_file_name(ObjectModel.get_file_name() + "PP" + ".jpg");
-				agent.sendImageInfo(getFileName(), getFilePath());
-			} else {
-				ObjectModel.set_file_name(ObjectModel.get_file_name().replace("PP.jpg", ""));
-				Loader.save(ImageModel.get_mat_img(), getFileName(), getFilePath());
-				agent.sendImageInfo(getFileName(), getFilePath());
-			}
 
+				if (ObjectModel.get_file_name().contains("PP")) {
+					Imgcodecs.imwrite(ObjectModel.get_path() + "/results/" + ObjectModel.get_file_name(),
+							obj_morphological_img);
+					ObjectModel.set_file_name(ObjectModel.get_file_name());
+				} else {
+					Imgcodecs.imwrite(ObjectModel.get_path() + "/results/PP" + ObjectModel.get_file_name(),
+							obj_morphological_img);
+					ObjectModel.set_file_name("PP" + ObjectModel.get_file_name());
+				}
+
+				agent.sendImageInfo();
+			} else if (dataset_selected) {
+				ObjectModel.set_file_name(ObjectModel.get_file_name().replace("PP", ""));
+				agent.sendImageInfo();
+			} else {
+				ObjectModel.set_file_name(ObjectModel.get_file_name().replace("PP", ""));
+				Loader.save(ImageModel.get_mat_img(), getFileName(), getFilePath());
+				agent.sendImageInfo();
+			}
+		}
+	}
+
+	@FXML
+	protected void check_dataset() {
+		if (dataset.isSelected()) {
+			choose_img.setText("Choose Dataset Folder");
+			accuracy_label.setText("Object Detected");
+			dataset_selected = true;
+		} else {
+			choose_img.setText("Choose Scene Image");
+			accuracy_label.setText("Accuracy");
+			dataset_selected = false;
 		}
 	}
 
@@ -135,19 +173,33 @@ public class UIController {
 	 */
 	@FXML
 	protected void browse_img() {
-		File file1 = fileChooser.showOpenDialog(null);
-		if (file1 != null) {
-			String rel_path = file1.getParent().replace("C:\\", "/");
-			rel_path = rel_path.replaceAll(Pattern.quote("\\"), "/");
-			img_path.setText(rel_path + "/" + file1.getName());
-			setFileName(file1.getName());
-			setFilePath(rel_path);
-			Mat oriImage = Imgcodecs.imread(rel_path + "/" + file1.getName());
-			Image showOriImg = Utils.mat2Image(oriImage);
-			updateImageView(ori_img, showOriImg);
-			ImageModel.set_mat_img(oriImage);
-		} else {
-			System.out.println("Image couldn't be loaded");
+		if (choose_img.getText().equals("Choose Scene Image")) {
+			fileChooser.setTitle("Select Scene Image");
+			File file1 = fileChooser.showOpenDialog(null);
+			if (file1 != null) {
+				String rel_path = file1.getParent().replace("C:\\", "/");
+				rel_path = rel_path.replaceAll(Pattern.quote("\\"), "/");
+				img_path.setText(rel_path + "/" + file1.getName());
+				setFileName(file1.getName());
+				setFilePath(rel_path);
+				Mat oriImage = Imgcodecs.imread(rel_path + "/" + file1.getName());
+				Image showOriImg = Utils.mat2Image(oriImage);
+				updateImageView(ori_img, showOriImg);
+				ImageModel.set_mat_img(oriImage);
+			} else {
+
+			}
+		} else if (choose_img.getText().equals("Choose Dataset Folder")) {
+			dirChooser.setTitle("Select Dataset Folder");
+			File selectedDir = dirChooser.showDialog(null);
+			if (selectedDir != null) {
+				String rel_path = selectedDir.toString().replace("C:\\", "/");
+				rel_path = rel_path.replaceAll(Pattern.quote("\\"), "/");
+				img_path.setText(rel_path);
+				DirectoryModel.setDir(rel_path);
+			} else {
+				System.out.println("Directory couldn't be loaded");
+			}
 		}
 	}
 

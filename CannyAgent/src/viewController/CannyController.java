@@ -29,7 +29,10 @@ import jade.CannyAgent;
 import javafx.fxml.FXML;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
+import model.Computation;
+import model.DirectoryModel;
 import model.ImageModel;
+import model.ObjectModel;
 
 public class CannyController {
 	@FXML
@@ -84,50 +87,47 @@ public class CannyController {
 		return KeyPointList;
 	}
 
-	public static void matched_corners(String object, Mat scene, List<KeyPoint> keyPointList) {
-		String bookObject = object;
-		System.out.println(bookObject);
+	public static double matched_corners(List<KeyPoint> matchedScene, List<KeyPoint> matchedObj, String hybrid_tag) {
+		// TODO Auto-generated method stub
 
-		System.out.println("Started....");
-		System.out.println("Loading images...");
+		String bookScene = DirectoryModel.getDir() + "/" + DirectoryModel.get_file_name();
+		String bookObject = ObjectModel.get_path() + "/" + ObjectModel.get_file_name();
+
 		Mat objectImage = Imgcodecs.imread(bookObject, Imgcodecs.CV_LOAD_IMAGE_COLOR);
-		Mat sceneImage = scene;
+		Mat sceneImage = Imgcodecs.imread(bookScene, Imgcodecs.CV_LOAD_IMAGE_COLOR);
 
 		MatOfKeyPoint objectKeyPoints = new MatOfKeyPoint();
-		objectKeyPoints.fromList(keyPointList);
-		System.out.println("Detecting key points...");
-		System.out.println("Total number of corners in object: " + objectKeyPoints.total());
+		objectKeyPoints.fromList(matchedObj);
 
+		Computation.setObjectCorners(objectKeyPoints.total());
 		MatOfKeyPoint objectDescriptors = new MatOfKeyPoint();
 		DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.ORB);
-		System.out.println("Computing descriptors...");
+
 		descriptorExtractor.compute(objectImage, objectKeyPoints, objectDescriptors);
 
 		// Create the matrix for output image.
 		Mat outputImage = new Mat(objectImage.rows(), objectImage.cols(), Imgcodecs.CV_LOAD_IMAGE_COLOR);
-		Scalar newKeypointColor = new Scalar(255, 0, 0);
+		Scalar newKeypointColor = new Scalar(0, 0, 255);
 
-		System.out.println("Drawing key points on object image...");
 		Features2d.drawKeypoints(objectImage, objectKeyPoints, outputImage, newKeypointColor, 0);
 
 		// Match object image with the scene image
 		MatOfKeyPoint sceneKeyPoints = new MatOfKeyPoint();
-		sceneKeyPoints.fromList(keyPointList);
+		sceneKeyPoints.fromList(matchedScene);
 		MatOfKeyPoint sceneDescriptors = new MatOfKeyPoint();
-		System.out.println("Detecting key points in background image...");
-		System.out.println("number of key points in scene:" + sceneKeyPoints.total());
-		System.out.println("Computing descriptors in background image...");
+
+		Computation.setSceneCorners(sceneKeyPoints.total());
+
 		descriptorExtractor.compute(sceneImage, sceneKeyPoints, sceneDescriptors);
 
 		Mat matchoutput = new Mat(sceneImage.rows() * 2, sceneImage.cols() * 2, Imgcodecs.CV_LOAD_IMAGE_COLOR);
-		Scalar matchestColor = new Scalar(0, 255, 0);
+		Scalar matchestColor = new Scalar(0, 0, 255);
 
 		List<MatOfDMatch> matches = new LinkedList<MatOfDMatch>();
 		DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
-		System.out.println("Matching object and scene images...");
+
 		descriptorMatcher.knnMatch(objectDescriptors, sceneDescriptors, matches, 2);
 
-		System.out.println("Calculating good match list...");
 		LinkedList<DMatch> goodMatchesList = new LinkedList<DMatch>();
 
 		// float nndrRatio = 0.7f;
@@ -138,9 +138,9 @@ public class CannyController {
 			DMatch m1 = dmatcharray[0];
 			goodMatchesList.addLast(m1);
 		}
-		System.out.println("Number of matched corners: " + goodMatchesList.size());
+
+		Computation.setMatchedCorners(goodMatchesList.size());
 		if (goodMatchesList.size() >= 7) {
-			System.out.println("Object Found!!!");
 
 			List<KeyPoint> objKeypointlist = objectKeyPoints.toList();
 			List<KeyPoint> scnKeypointlist = sceneKeyPoints.toList();
@@ -167,10 +167,9 @@ public class CannyController {
 			obj_corners.put(2, 0, new double[] { objectImage.cols(), objectImage.rows() });
 			obj_corners.put(3, 0, new double[] { 0, objectImage.rows() });
 
-			System.out.println("Transforming object corners to scene corners...");
 			Core.perspectiveTransform(obj_corners, scene_corners, homography);
 
-			Mat img = scene;
+			Mat img = Imgcodecs.imread(bookScene, Imgcodecs.CV_LOAD_IMAGE_COLOR);
 
 			Imgproc.line(img, new Point(scene_corners.get(0, 0)), new Point(scene_corners.get(1, 0)),
 					new Scalar(0, 255, 0), 4);
@@ -181,19 +180,29 @@ public class CannyController {
 			Imgproc.line(img, new Point(scene_corners.get(3, 0)), new Point(scene_corners.get(0, 0)),
 					new Scalar(0, 255, 0), 4);
 
-			System.out.println("Drawing matches image...");
 			MatOfDMatch goodMatches = new MatOfDMatch();
 			goodMatches.fromList(goodMatchesList);
 
 			Features2d.drawMatches(objectImage, objectKeyPoints, sceneImage, sceneKeyPoints, goodMatches, matchoutput,
 					matchestColor, newKeypointColor, new MatOfByte(), 2);
 
-			Imgcodecs.imwrite(ImageModel.get_file_name() + ".jpg", outputImage);
+			Imgcodecs.imwrite(ImageModel.get_path() + "/" + ImageModel.get_file_name() + hybrid_tag + ".jpg",
+					outputImage);
 		} else {
-			System.out.println("Object Not Found");
+
 		}
+		return goodMatchesList.size();
+	}
 
-		System.out.println("Ended....");
+	public static double computeAccuracy() {
+		double scene_corners = Computation.getSceneCorners();
+		double object_corners = Computation.getObjectCorners();
+		double matched_corners = Computation.getMatchedCorners();
+		double accuracy = 0;
 
+		accuracy = ((matched_corners / object_corners) + (matched_corners / scene_corners)) / 2;
+		accuracy = accuracy * 100;
+
+		return accuracy;
 	}
 }

@@ -9,6 +9,7 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
+import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
@@ -27,6 +28,7 @@ import org.opencv.imgproc.Imgproc;
 
 import jade.CommunicationAgent;
 import model.Computation;
+import model.DirectoryModel;
 import model.ImageModel;
 import model.ObjectModel;
 
@@ -113,28 +115,32 @@ public class CommunicationController {
 
 		for (int i = 0; i < lines.size(); i++) {
 			temp = lines.get(i).split("}");
-			String point = temp[temp.length - 2];
-			String keypoint = point.substring(14);
-			String[] coordinates = keypoint.split(",");
-			String x = coordinates[coordinates.length - 2];
-			String y = coordinates[coordinates.length - 1];
-			double x_val = Double.parseDouble(x);
-			double y_val = Double.parseDouble(y);
-			list.add(new KeyPoint((int) x_val, (int) y_val, -1));
+			try {
+				String point = temp[temp.length - 2];
+				String keypoint = point.substring(14);
+				String[] coordinates = keypoint.split(",");
+				String x = coordinates[coordinates.length - 2];
+				String y = coordinates[coordinates.length - 1];
+				double x_val = Double.parseDouble(x);
+				double y_val = Double.parseDouble(y);
+				list.add(new KeyPoint((int) x_val, (int) y_val, -1));
+			} catch (ArrayIndexOutOfBoundsException e) {
+				System.out.println("Ignore Failure");
+			}
 		}
 		return list;
 	}
 
-	public static void matched_corners(String object, String scene, String hybrid_tag) {
-
-		String bookObject = object;
-		String bookScene = scene;
+	public static void matched_corners_in_dataset(List<KeyPoint> ScenePt, List<KeyPoint> ObjPt, String msg_hybrid) {
+		// TODO Auto-generated method stub
+		String bookObject = ObjectModel.get_path() + "/" + ObjectModel.get_file_name();
+		String bookScene = DirectoryModel.getDir() + "/" + DirectoryModel.get_file_name();
 
 		Mat objectImage = Imgcodecs.imread(bookObject, Imgcodecs.CV_LOAD_IMAGE_COLOR);
 		Mat sceneImage = Imgcodecs.imread(bookScene, Imgcodecs.CV_LOAD_IMAGE_COLOR);
 
 		MatOfKeyPoint objectKeyPoints = new MatOfKeyPoint();
-		objectKeyPoints.fromList(keypoint_extraction(object, hybrid_tag));
+		objectKeyPoints.fromList(ObjPt);
 
 		Computation.setObjectCorners(objectKeyPoints.total());
 		MatOfKeyPoint objectDescriptors = new MatOfKeyPoint();
@@ -146,11 +152,15 @@ public class CommunicationController {
 		Mat outputImage = new Mat(objectImage.rows(), objectImage.cols(), Imgcodecs.CV_LOAD_IMAGE_COLOR);
 		Scalar newKeypointColor = new Scalar(0, 0, 255);
 
-		Features2d.drawKeypoints(objectImage, objectKeyPoints, outputImage, newKeypointColor, 0);
+		try {
+			Features2d.drawKeypoints(objectImage, objectKeyPoints, outputImage, newKeypointColor, 0);
+		} catch (CvException e) {
+			System.out.println("Eliminating Error");
+		}
 
 		// Match object image with the scene image
 		MatOfKeyPoint sceneKeyPoints = new MatOfKeyPoint();
-		sceneKeyPoints.fromList(keypoint_extraction(scene, hybrid_tag));
+		sceneKeyPoints.fromList(ScenePt);
 		MatOfKeyPoint sceneDescriptors = new MatOfKeyPoint();
 
 		Computation.setSceneCorners(sceneKeyPoints.total());
@@ -163,7 +173,11 @@ public class CommunicationController {
 		List<MatOfDMatch> matches = new LinkedList<MatOfDMatch>();
 		DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
 
-		descriptorMatcher.knnMatch(objectDescriptors, sceneDescriptors, matches, 2);
+		try {
+			descriptorMatcher.knnMatch(objectDescriptors, sceneDescriptors, matches, 3);
+		} catch (CvException e) {
+			System.out.println("Ignoring and continue");
+		}
 
 		LinkedList<DMatch> goodMatchesList = new LinkedList<DMatch>();
 
@@ -195,37 +209,12 @@ public class CommunicationController {
 			MatOfPoint2f scnMatOfPoint2f = new MatOfPoint2f();
 			scnMatOfPoint2f.fromList(scenePoints);
 
-			Mat homography = Calib3d.findHomography(objMatOfPoint2f, scnMatOfPoint2f, Calib3d.RANSAC, 3);
-
-			Mat obj_corners = new Mat(4, 1, CvType.CV_32FC2);
-			Mat scene_corners = new Mat(4, 1, CvType.CV_32FC2);
-
-			obj_corners.put(0, 0, new double[] { 0, 0 });
-			obj_corners.put(1, 0, new double[] { objectImage.cols(), 0 });
-			obj_corners.put(2, 0, new double[] { objectImage.cols(), objectImage.rows() });
-			obj_corners.put(3, 0, new double[] { 0, objectImage.rows() });
-
-			Core.perspectiveTransform(obj_corners, scene_corners, homography);
-
-			Mat img = Imgcodecs.imread(bookScene, Imgcodecs.CV_LOAD_IMAGE_COLOR);
-
-			Imgproc.line(img, new Point(scene_corners.get(0, 0)), new Point(scene_corners.get(1, 0)),
-					new Scalar(0, 255, 0), 4);
-			Imgproc.line(img, new Point(scene_corners.get(1, 0)), new Point(scene_corners.get(2, 0)),
-					new Scalar(0, 255, 0), 4);
-			Imgproc.line(img, new Point(scene_corners.get(2, 0)), new Point(scene_corners.get(3, 0)),
-					new Scalar(0, 255, 0), 4);
-			Imgproc.line(img, new Point(scene_corners.get(3, 0)), new Point(scene_corners.get(0, 0)),
-					new Scalar(0, 255, 0), 4);
-
 			MatOfDMatch goodMatches = new MatOfDMatch();
 			goodMatches.fromList(goodMatchesList);
 
 			Features2d.drawMatches(objectImage, objectKeyPoints, sceneImage, sceneKeyPoints, goodMatches, matchoutput,
 					matchestColor, newKeypointColor, new MatOfByte(), 2);
 
-			Imgcodecs.imwrite(ImageModel.get_path() + "/" + ImageModel.get_file_name() + hybrid_tag + ".jpg",
-					outputImage);
 			// Imgcodecs.imwrite("images//matchoutput.jpg", matchoutput);
 			// Imgcodecs.imwrite("images//img.jpg", img);
 		} else {
@@ -233,59 +222,18 @@ public class CommunicationController {
 		}
 	}
 
-	public static double computeAccuracy() {
+	public static void matched_corners(List<KeyPoint> matchedScene, List<KeyPoint> matchedObj, String hybrid_tag) {
 
-		double scene_corners = Computation.getSceneCorners();
-		double object_corners = Computation.getObjectCorners();
-		double matched_corners = Computation.getMatchedCorners();
-		double accuracy = 0;
+		String bookObject;
+		String bookScene;
 
-		accuracy = ((matched_corners / object_corners) + (matched_corners / scene_corners)) / 2;
-		accuracy = accuracy * 100;
-
-		return accuracy;
-	}
-
-	public static double compute_hybrid_HSC(List<KeyPoint> sceneKeyPoint1, List<KeyPoint> sceneKeyPoint2,
-			List<KeyPoint> sceneKeyPoint3, List<KeyPoint> objKeyPoint1, List<KeyPoint> objKeyPoint2,
-			List<KeyPoint> objKeyPoint3, String hybrid_tag) {
-		// TODO Auto-generated method stub
-		List<KeyPoint> mergeScene = new ArrayList<KeyPoint>();
-		mergeScene.addAll(sceneKeyPoint1);
-		mergeScene.addAll(sceneKeyPoint2);
-		mergeScene.addAll(sceneKeyPoint3);
-
-		List<KeyPoint> mergeObject = new ArrayList<KeyPoint>();
-		mergeObject.addAll(objKeyPoint1);
-		mergeObject.addAll(objKeyPoint2);
-		mergeScene.addAll(sceneKeyPoint3);
-		double hybrid_matched = getHybridMatched(mergeScene, mergeObject, hybrid_tag);
-		double accuracy = (((hybrid_matched / (double) mergeScene.size())
-				+ (hybrid_matched / (double) mergeObject.size())) / 2) * 100;
-		return accuracy;
-	}
-
-	public static double compute_hybrid(List<KeyPoint> sceneKeyPoint1, List<KeyPoint> sceneKeyPoint2,
-			List<KeyPoint> objKeyPoint1, List<KeyPoint> objKeyPoint2, String hybrid_tag) {
-
-		List<KeyPoint> mergeScene = new ArrayList<KeyPoint>();
-		mergeScene.addAll(sceneKeyPoint1);
-		mergeScene.addAll(sceneKeyPoint2);
-
-		List<KeyPoint> mergeObject = new ArrayList<KeyPoint>();
-		mergeObject.addAll(objKeyPoint1);
-		mergeObject.addAll(objKeyPoint2);
-		double hybrid_matched = getHybridMatched(mergeScene, mergeObject, hybrid_tag);
-		double accuracy = (((hybrid_matched / (double) mergeScene.size())
-				+ (hybrid_matched / (double) mergeObject.size())) / 2) * 100;
-		return accuracy;
-	}
-
-	private static double getHybridMatched(List<KeyPoint> matchedScene, List<KeyPoint> matchedObj, String hybrid_tag) {
-		// TODO Auto-generated method stub
-
-		String bookScene = ImageModel.get_path() + "/" + ImageModel.get_file_name();
-		String bookObject = ObjectModel.get_path() + "/" + ObjectModel.get_file_name();
+		if (ObjectModel.get_file_name().contains("PP") && ImageModel.get_file_name().contains("PP")) {
+			bookObject = ObjectModel.get_path() + "/results/" + ObjectModel.get_file_name();
+			bookScene = ImageModel.get_path() + "/results/" + ImageModel.get_file_name();
+		} else {
+			bookObject = ObjectModel.get_path() + "/" + ObjectModel.get_file_name();
+			bookScene = ImageModel.get_path() + "/" + ImageModel.get_file_name();
+		}
 
 		Mat objectImage = Imgcodecs.imread(bookObject, Imgcodecs.CV_LOAD_IMAGE_COLOR);
 		Mat sceneImage = Imgcodecs.imread(bookScene, Imgcodecs.CV_LOAD_IMAGE_COLOR);
@@ -320,7 +268,11 @@ public class CommunicationController {
 		List<MatOfDMatch> matches = new LinkedList<MatOfDMatch>();
 		DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
 
-		descriptorMatcher.knnMatch(objectDescriptors, sceneDescriptors, matches, 2);
+		try {
+			descriptorMatcher.knnMatch(objectDescriptors, sceneDescriptors, matches, 2);
+		} catch (CvException e) {
+			System.out.println("Eliminating error and continue");
+		}
 
 		LinkedList<DMatch> goodMatchesList = new LinkedList<DMatch>();
 
@@ -342,6 +294,7 @@ public class CommunicationController {
 			LinkedList<Point> objectPoints = new LinkedList<>();
 			LinkedList<Point> scenePoints = new LinkedList<>();
 			for (int i = 0; i < goodMatchesList.size(); i++) {
+
 				objectPoints.addLast(objKeypointlist.get(goodMatchesList.get(i).queryIdx).pt);
 				scenePoints.addLast(scnKeypointlist.get(goodMatchesList.get(i).trainIdx).pt);
 			}
@@ -380,12 +333,26 @@ public class CommunicationController {
 			Features2d.drawMatches(objectImage, objectKeyPoints, sceneImage, sceneKeyPoints, goodMatches, matchoutput,
 					matchestColor, newKeypointColor, new MatOfByte(), 2);
 
-			Imgcodecs.imwrite(ImageModel.get_path() + "/" + ImageModel.get_file_name() + hybrid_tag + ".jpg",
+			Imgcodecs.imwrite(ImageModel.get_path() + "/results/" + ImageModel.get_file_name() + hybrid_tag + ".jpg",
 					outputImage);
+			// Imgcodecs.imwrite("images//matchoutput.jpg", matchoutput);
+			// Imgcodecs.imwrite("images//img.jpg", img);
 		} else {
 
 		}
-		return goodMatchesList.size();
+	}
+
+	public static double computeAccuracy() {
+
+		double scene_corners = Computation.getSceneCorners();
+		double object_corners = Computation.getObjectCorners();
+		double matched_corners = Computation.getMatchedCorners();
+		double accuracy = 0;
+
+		accuracy = ((matched_corners / object_corners) + (matched_corners / scene_corners)) / 2;
+		accuracy = accuracy * 100;
+
+		return accuracy;
 	}
 
 	public static void setHarrisScenePt(List<KeyPoint> harris_sceneKeyPoint) {

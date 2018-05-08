@@ -61,12 +61,12 @@ public class ShiTomasiController {
 	public List<KeyPoint> doShiTomasi(String path, String name) throws IOException {
 		Mat image = Imgcodecs.imread(path + "/" + name);
 		Mat sceneGrayScale = new Mat();
-		double qualityLevel = 0.01;
+		double qualityLevel = 0.1;
 		double minDistance = 10;
 		int blockSize = 9;
-		boolean useHarrisDetector = false;
+		boolean useHarrisDetector = true;
 		double k = 0.1;
-		int maxCorners = 200;
+		int maxCorners = 100;
 		Scalar circleColor = new Scalar(0, 0, 255, 0);
 		Imgproc.cvtColor(image, sceneGrayScale, Imgproc.COLOR_BGR2GRAY);
 

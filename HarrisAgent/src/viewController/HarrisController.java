@@ -62,9 +62,9 @@ public class HarrisController {
 		MatOfKeyPoint dst = new MatOfKeyPoint(), dst_norm = new MatOfKeyPoint(), dst_norm_scaled = new MatOfKeyPoint();
 		Mat grayImage = new Mat();
 		// Detector parameters
-		int blockSize = 2;
+		int blockSize = 9;
 		int apertureSize = 3;
-		double k = 0.04;
+		double k = 0.08;
 
 		// convert to grayscale
 		Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
@@ -80,7 +80,7 @@ public class HarrisController {
 		// map points to every corner detected
 		for (int j = 0; j < dst_norm_scaled.rows(); j++) {
 			for (int i = 0; i < dst_norm_scaled.cols(); i++) {
-				if ((int) dst_norm_scaled.get(j, i)[0] > 150) {
+				if ((int) dst_norm_scaled.get(j, i)[0] > 200) {
 					KeyPointList.add(new KeyPoint(i, j, -1));
 				}
 			}

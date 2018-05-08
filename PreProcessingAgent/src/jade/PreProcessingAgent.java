@@ -11,6 +11,7 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import javafx.scene.image.Image;
 import javafx.scene.text.Font;
+import model.DirectoryModel;
 import model.ImageModel;
 import model.MessageModel;
 import model.ObjectModel;
@@ -116,7 +117,7 @@ public class PreProcessingAgent extends Agent {
 	/*
 	 * Send image information to communication agent
 	 */
-	public void sendImageInfo(String fileName, String path) {
+	public void sendImageInfo() {
 		addBehaviour(new OneShotBehaviour(this) {
 
 			@Override
@@ -125,13 +126,20 @@ public class PreProcessingAgent extends Agent {
 				ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 				msg.addReceiver(new AID("CommunicationAgent", AID.ISLOCALNAME));
 				start_time = System.currentTimeMillis();
-				String img_info = ObjectModel.get_path() + "-" + ObjectModel.get_file_name() + "-"
-						+ MessageModel.getMessage() + "-" + String.valueOf(ImageModel.getRow()) + "-"
-						+ String.valueOf(ImageModel.getCol()) + "-" + String.valueOf(
-								ImageModel.getType() + "-" + ImageModel.get_path() + "-" + ImageModel.get_file_name());
-				System.out.println(img_info);
-				msg.setContent(img_info);
 
+				if (UIController.selectDataset) {
+					String img_info = ObjectModel.get_path() + "-" + ObjectModel.get_file_name() + "-"
+							+ MessageModel.getMessage() + "-" + DirectoryModel.getDir();
+					System.out.println(img_info);
+					msg.setContent(img_info);
+				} else {
+					String img_info = ObjectModel.get_path() + "-" + ObjectModel.get_file_name() + "-"
+							+ MessageModel.getMessage() + "-" + String.valueOf(ImageModel.getRow()) + "-"
+							+ String.valueOf(ImageModel.getCol()) + "-" + String.valueOf(ImageModel.getType() + "-"
+									+ ImageModel.get_path() + "-" + ImageModel.get_file_name());
+					System.out.println(img_info);
+					msg.setContent(img_info);
+				}
 				msg.setConversationId("img_info");
 				send(msg);
 				System.out.println("Image information send");
@@ -158,22 +166,27 @@ public class PreProcessingAgent extends Agent {
 					time_taken = end_time - start_time;
 					controller.txt_time.setText(String.valueOf((double) (time_taken / 1000) % 60) + "(s)");
 					controller.status.setText("Processing done");
-					Mat mat_img = Imgcodecs
-							.imread(ImageModel.get_path() + "/" + ImageModel.get_file_name() + hybrid_img + ".jpg");
-					Image result_img = Utils.mat2Image(mat_img);
-					if (Double.valueOf(accuracy) >= Double.valueOf(ACPController.getMinMatch())) {
-						controller.txt_accuracy.setStyle("-fx-text-inner-color: green;");
+					System.out.println(time_taken);
+					if (UIController.selectDataset) {
+						controller.txt_accuracy.setFont(Font.font("Verdana", 15));
+						controller.txt_accuracy.setText(accuracy);
 					} else {
-						controller.txt_accuracy.setStyle("-fx-text-inner-color: red;");
+						Mat mat_img = Imgcodecs.imread(
+								ImageModel.get_path() + "/results/" + ImageModel.get_file_name() + hybrid_img + ".jpg");
+						Image result_img = Utils.mat2Image(mat_img);
+						if (Double.valueOf(accuracy) >= Double.valueOf(ACPController.getMinMatch())) {
+							controller.txt_accuracy.setStyle("-fx-text-inner-color: green;");
+						} else {
+							controller.txt_accuracy.setStyle("-fx-text-inner-color: red;");
+						}
+						controller.txt_accuracy.setFont(Font.font("Verdana", 15));
+						double dacc = Double.valueOf(accuracy);
+						if (Double.valueOf(dacc) > 100) {
+							dacc = modulus(dacc);
+						}
+						controller.txt_accuracy.setText(String.format("%.2f", Double.valueOf(dacc)) + "%");
+						UIController.updateImageView(controller.morpho_img, result_img);
 					}
-					controller.txt_accuracy.setFont(Font.font("Verdana", 15));
-					double dacc = Double.valueOf(accuracy);
-					if (Double.valueOf(dacc) > 100) {
-						dacc = modulus(dacc);
-					}
-					controller.txt_accuracy.setText(String.format("%.2f", Double.valueOf(dacc)) + "%");
-
-					UIController.updateImageView(controller.morpho_img, result_img);
 				} else {
 					block();
 				}

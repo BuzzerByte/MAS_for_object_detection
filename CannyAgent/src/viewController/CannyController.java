@@ -64,6 +64,7 @@ public class CannyController {
 		Mat grayImage = new Mat();
 		Mat edges = new Mat();
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+
 		Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
 		// Detecting the edges
 		Imgproc.Canny(image, edges, 60, 60 * 3);

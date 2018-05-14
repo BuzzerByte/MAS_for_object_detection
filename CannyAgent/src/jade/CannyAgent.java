@@ -150,8 +150,8 @@ public class CannyAgent extends Agent {
 							sendCannyProcessStatus();
 							break;
 						case "SC":
-							starter = listOfFiles.length / 2;
-							for (int i = 0; i < starter; i++) {
+							starter = listOfFiles.length;
+							for (int i = (starter / 2); i < starter; i++) {
 								File file = listOfFiles[i];
 								if (file.isFile()) {
 									DirectoryModel.set_file_name(file.getName());

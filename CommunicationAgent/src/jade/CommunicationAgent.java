@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
 
 import org.opencv.core.KeyPoint;
 
@@ -154,51 +152,8 @@ public class CommunicationAgent extends Agent {
 			sendInfoToShiTomasi(img_info);
 			break;
 		case "HC":
-			final CyclicBarrier gate = new CyclicBarrier(3);
-
-			Thread t1 = new Thread() {
-				public void run() {
-					try {
-						gate.await();
-						sendInfoToHarris(img_info);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (BrokenBarrierException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					// do stuff
-				}
-			};
-			Thread t2 = new Thread() {
-				public void run() {
-					try {
-						gate.await();
-						sendInfoToCanny(img_info);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (BrokenBarrierException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					// do stuff
-				}
-			};
-
-			t1.start();
-			t2.start();
-			try {
-				gate.await();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (BrokenBarrierException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			System.out.println("all threads started");
+			sendInfoToHarris(img_info);
+			sendInfoToCanny(img_info);
 			break;
 		case "HS":
 			sendInfoToHarris(img_info);
@@ -672,7 +627,7 @@ public class CommunicationAgent extends Agent {
 					File folder = new File(DirectoryModel.getDir());
 					File[] listOfFiles = folder.listFiles(new ImageFileFilter());
 					String temp;
-					int starter;
+
 					String selected_option = img_info_array[img_info_array.length - 2];
 					switch (selected_option) {
 					case "canny":
@@ -708,17 +663,26 @@ public class CommunicationAgent extends Agent {
 						send(msg);
 						CommunicationController.setCannyObjPt(CommunicationController.keypoint_extraction(
 								ObjectModel.get_path() + "/canny/" + ObjectModel.get_file_name(), "canny"));
-						starter = listOfFiles.length;
-						for (int i = (listOfFiles.length / 2); i < starter; i++) {
-							File file = listOfFiles[i];
+						CommunicationController.setHarrisObjPt(CommunicationController.keypoint_extraction(
+								ObjectModel.get_path() + "/harris/" + ObjectModel.get_file_name(), "harris"));
+						List<KeyPoint> HCmergeObjectPts = new ArrayList<KeyPoint>();
+						HCmergeObjectPts.addAll(CommunicationController.getHarrisObjPt());
+						HCmergeObjectPts.addAll(CommunicationController.getCannyObjPt());
+
+						for (File file : listOfFiles) {
 							if (file.isFile()) {
 								DirectoryModel.set_file_name(file.getName());
-
+								CommunicationController.setHarrisScenePt(CommunicationController.keypoint_extraction(
+										DirectoryModel.getDir() + "/harris/" + DirectoryModel.get_file_name(),
+										"harris"));
 								CommunicationController.setCannyScenePt(CommunicationController.keypoint_extraction(
 										DirectoryModel.getDir() + "/canny/" + DirectoryModel.get_file_name(), "canny"));
-								CommunicationController.matched_corners_in_dataset(
-										CommunicationController.getCannyScenePt(),
-										CommunicationController.getCannyObjPt(), "canny");
+
+								List<KeyPoint> HCmergeScenePts = new ArrayList<KeyPoint>();
+								HCmergeScenePts.addAll(CommunicationController.getHarrisScenePt());
+								HCmergeScenePts.addAll(CommunicationController.getCannyScenePt());
+								CommunicationController.matched_corners_in_dataset(HCmergeScenePts, HCmergeObjectPts,
+										"canny");
 
 								temp = Double.toString(CommunicationController.computeAccuracy());
 
@@ -739,17 +703,29 @@ public class CommunicationAgent extends Agent {
 						send(msg);
 						CommunicationController.setCannyObjPt(CommunicationController.keypoint_extraction(
 								ObjectModel.get_path() + "/canny/" + ObjectModel.get_file_name(), "canny"));
-						starter = listOfFiles.length;
-						for (int i = (listOfFiles.length / 2); i < starter; i++) {
-							File file = listOfFiles[i];
+						CommunicationController.setShiTomasiObjPt(CommunicationController.keypoint_extraction(
+								ObjectModel.get_path() + "/shitomasi/" + ObjectModel.get_file_name(), "shi_tomasi"));
+
+						List<KeyPoint> SCmergeObjectPts = new ArrayList<KeyPoint>();
+						SCmergeObjectPts.addAll(CommunicationController.getShiTomasiObjPt());
+						SCmergeObjectPts.addAll(CommunicationController.getCannyObjPt());
+
+						for (File file : listOfFiles) {
+
 							if (file.isFile()) {
 								DirectoryModel.set_file_name(file.getName());
 
 								CommunicationController.setCannyScenePt(CommunicationController.keypoint_extraction(
 										DirectoryModel.getDir() + "/canny/" + DirectoryModel.get_file_name(), "canny"));
-								CommunicationController.matched_corners_in_dataset(
-										CommunicationController.getCannyScenePt(),
-										CommunicationController.getCannyObjPt(), "canny");
+								CommunicationController.setShiTomasiScenePt(CommunicationController.keypoint_extraction(
+										DirectoryModel.getDir() + "/shitomasi/" + DirectoryModel.get_file_name(),
+										"shi_tomasi"));
+								List<KeyPoint> SCmergeScenePts = new ArrayList<KeyPoint>();
+								SCmergeScenePts.addAll(CommunicationController.getShiTomasiScenePt());
+								SCmergeScenePts.addAll(CommunicationController.getCannyScenePt());
+
+								CommunicationController.matched_corners_in_dataset(SCmergeScenePts, SCmergeObjectPts,
+										"canny");
 
 								temp = Double.toString(CommunicationController.computeAccuracy());
 
@@ -770,17 +746,37 @@ public class CommunicationAgent extends Agent {
 						send(msg);
 						CommunicationController.setCannyObjPt(CommunicationController.keypoint_extraction(
 								ObjectModel.get_path() + "/canny/" + ObjectModel.get_file_name(), "canny"));
-						starter = listOfFiles.length;
-						for (int i = (listOfFiles.length / 3) + (listOfFiles.length / 3); i < starter; i++) {
-							File file = listOfFiles[i];
+						CommunicationController.setShiTomasiObjPt(CommunicationController.keypoint_extraction(
+								ObjectModel.get_path() + "/shitomasi/" + ObjectModel.get_file_name(), "shi_tomasi"));
+						CommunicationController.setHarrisObjPt(CommunicationController.keypoint_extraction(
+								ObjectModel.get_path() + "/harris/" + ObjectModel.get_file_name(), "harris"));
+
+						List<KeyPoint> HSCmergeObjectPts = new ArrayList<KeyPoint>();
+						HSCmergeObjectPts.addAll(CommunicationController.getShiTomasiObjPt());
+						HSCmergeObjectPts.addAll(CommunicationController.getCannyObjPt());
+						HSCmergeObjectPts.addAll(CommunicationController.getHarrisObjPt());
+
+						for (File file : listOfFiles) {
+
 							if (file.isFile()) {
 								DirectoryModel.set_file_name(file.getName());
 
 								CommunicationController.setCannyScenePt(CommunicationController.keypoint_extraction(
 										DirectoryModel.getDir() + "/canny/" + DirectoryModel.get_file_name(), "canny"));
-								CommunicationController.matched_corners_in_dataset(
-										CommunicationController.getCannyScenePt(),
-										CommunicationController.getCannyObjPt(), "canny");
+								CommunicationController.setShiTomasiScenePt(CommunicationController.keypoint_extraction(
+										DirectoryModel.getDir() + "/shitomasi/" + DirectoryModel.get_file_name(),
+										"shi_tomasi"));
+								CommunicationController.setHarrisScenePt(CommunicationController.keypoint_extraction(
+										DirectoryModel.getDir() + "/harris/" + DirectoryModel.get_file_name(),
+										"harris"));
+
+								List<KeyPoint> HSCmergeScenePts = new ArrayList<KeyPoint>();
+								HSCmergeScenePts.addAll(CommunicationController.getShiTomasiScenePt());
+								HSCmergeScenePts.addAll(CommunicationController.getCannyScenePt());
+								HSCmergeScenePts.addAll(CommunicationController.getHarrisScenePt());
+
+								CommunicationController.matched_corners_in_dataset(HSCmergeScenePts, HSCmergeObjectPts,
+										"canny");
 
 								temp = Double.toString(CommunicationController.computeAccuracy());
 
@@ -828,7 +824,7 @@ public class CommunicationAgent extends Agent {
 					File folder = new File(DirectoryModel.getDir());
 					File[] listOfFiles = folder.listFiles(new ImageFileFilter());
 					String temp;
-					int starter;
+
 					String selected_option = img_info_array[img_info_array.length - 2];
 					switch (selected_option) {
 					case "harris":
@@ -863,99 +859,12 @@ public class CommunicationAgent extends Agent {
 						break;
 					case "HC":
 						send(msg);
-						CommunicationController.setHarrisObjPt(CommunicationController.keypoint_extraction(
-								ObjectModel.get_path() + "/harris/" + ObjectModel.get_file_name(), "harris"));
-						starter = listOfFiles.length;
-						for (int i = 0; i < (starter / 2); i++) {
-							File file = listOfFiles[i];
-							if (file.isFile()) {
-								DirectoryModel.set_file_name(file.getName());
-
-								CommunicationController.setHarrisScenePt(CommunicationController.keypoint_extraction(
-										DirectoryModel.getDir() + "/harris/" + DirectoryModel.get_file_name(),
-										"harris"));
-								CommunicationController.matched_corners_in_dataset(
-										CommunicationController.getHarrisScenePt(),
-										CommunicationController.getHarrisObjPt(), "harris");
-
-								temp = Double.toString(CommunicationController.computeAccuracy());
-
-								if (Double.valueOf(temp) >= 90 && Double.valueOf(temp) <= 100) {
-									harrisCount++;
-									System.out.println("Detected: " + harrisCount);
-								} else {
-									System.out.println("No Detected");
-								}
-								System.out.println(file.getName() + ":" + temp);
-							} else if (file.isDirectory()) {
-								System.out.println("Directory " + file.getName());
-							}
-						}
-						doneDetection = true;
 						break;
 					case "HS":
 						send(msg);
-						CommunicationController.setHarrisObjPt(CommunicationController.keypoint_extraction(
-								ObjectModel.get_path() + "/harris/" + ObjectModel.get_file_name(), "harris"));
-						starter = listOfFiles.length;
-						for (int i = 0; i < (starter / 2); i++) {
-							File file = listOfFiles[i];
-							if (file.isFile()) {
-								DirectoryModel.set_file_name(file.getName());
-
-								CommunicationController.setHarrisScenePt(CommunicationController.keypoint_extraction(
-										DirectoryModel.getDir() + "/harris/" + DirectoryModel.get_file_name(),
-										"harris"));
-								CommunicationController.matched_corners_in_dataset(
-										CommunicationController.getHarrisScenePt(),
-										CommunicationController.getHarrisObjPt(), "harris");
-
-								temp = Double.toString(CommunicationController.computeAccuracy());
-
-								if (Double.valueOf(temp) >= 90 && Double.valueOf(temp) <= 100) {
-									harrisCount++;
-									System.out.println("Detected: " + harrisCount);
-								} else {
-									System.out.println("No Detected");
-								}
-								System.out.println(file.getName() + ":" + temp);
-							} else if (file.isDirectory()) {
-								System.out.println("Directory " + file.getName());
-							}
-						}
-						doneDetection = true;
 						break;
 					case "HSC":
 						send(msg);
-						CommunicationController.setHarrisObjPt(CommunicationController.keypoint_extraction(
-								ObjectModel.get_path() + "/harris/" + ObjectModel.get_file_name(), "harris"));
-						starter = listOfFiles.length;
-						for (int i = 0; i < (starter / 3); i++) {
-							File file = listOfFiles[i];
-							if (file.isFile()) {
-								DirectoryModel.set_file_name(file.getName());
-
-								CommunicationController.setHarrisScenePt(CommunicationController.keypoint_extraction(
-										DirectoryModel.getDir() + "/harris/" + DirectoryModel.get_file_name(),
-										"harris"));
-								CommunicationController.matched_corners_in_dataset(
-										CommunicationController.getHarrisScenePt(),
-										CommunicationController.getHarrisObjPt(), "harris");
-
-								temp = Double.toString(CommunicationController.computeAccuracy());
-
-								if (Double.valueOf(temp) >= 90 && Double.valueOf(temp) <= 100) {
-									harrisCount++;
-									System.out.println("Detected: " + harrisCount);
-								} else {
-									System.out.println("No Detected");
-								}
-								System.out.println(file.getName() + ":" + temp);
-							} else if (file.isDirectory()) {
-								System.out.println("Directory " + file.getName());
-							}
-						}
-						doneDetection = true;
 						break;
 					default:
 						System.out.println("System error, please restart");
@@ -986,7 +895,7 @@ public class CommunicationAgent extends Agent {
 					File folder = new File(DirectoryModel.getDir());
 					File[] listOfFiles = folder.listFiles(new ImageFileFilter());
 					String temp;
-					int starter;
+
 					String selected_option = img_info_array[img_info_array.length - 2];
 					switch (selected_option) {
 					case "shi_tomasi":
@@ -1021,20 +930,30 @@ public class CommunicationAgent extends Agent {
 						break;
 					case "HS":
 						send(msg);
+						CommunicationController.setShiTomasiObjPt(CommunicationController.keypoint_extraction(
+								ObjectModel.get_path() + "/shitomasi/" + ObjectModel.get_file_name(), "shi_tomasi"));
 						CommunicationController.setHarrisObjPt(CommunicationController.keypoint_extraction(
 								ObjectModel.get_path() + "/harris/" + ObjectModel.get_file_name(), "harris"));
-						starter = listOfFiles.length;
-						for (int i = 0; i < (starter / 2); i++) {
-							File file = listOfFiles[i];
+						List<KeyPoint> HSmergeObjectPts = new ArrayList<KeyPoint>();
+						HSmergeObjectPts.addAll(CommunicationController.getHarrisObjPt());
+						HSmergeObjectPts.addAll(CommunicationController.getShiTomasiObjPt());
+
+						for (File file : listOfFiles) {
+
 							if (file.isFile()) {
 								DirectoryModel.set_file_name(file.getName());
 
 								CommunicationController.setHarrisScenePt(CommunicationController.keypoint_extraction(
 										DirectoryModel.getDir() + "/harris/" + DirectoryModel.get_file_name(),
 										"harris"));
-								CommunicationController.matched_corners_in_dataset(
-										CommunicationController.getHarrisScenePt(),
-										CommunicationController.getHarrisObjPt(), "harris");
+								CommunicationController.setShiTomasiScenePt(CommunicationController.keypoint_extraction(
+										DirectoryModel.getDir() + "/shitomasi/" + DirectoryModel.get_file_name(),
+										"shi_tomasi"));
+								List<KeyPoint> HSmergeScenePts = new ArrayList<KeyPoint>();
+								HSmergeScenePts.addAll(CommunicationController.getHarrisScenePt());
+								HSmergeScenePts.addAll(CommunicationController.getShiTomasiScenePt());
+								CommunicationController.matched_corners_in_dataset(HSmergeScenePts, HSmergeObjectPts,
+										"harris");
 
 								temp = Double.toString(CommunicationController.computeAccuracy());
 
@@ -1053,67 +972,9 @@ public class CommunicationAgent extends Agent {
 						break;
 					case "SC":
 						send(msg);
-						CommunicationController.setShiTomasiObjPt(CommunicationController.keypoint_extraction(
-								ObjectModel.get_path() + "/shitomasi/" + ObjectModel.get_file_name(), "shi_tomasi"));
-						starter = listOfFiles.length;
-						for (int i = 0; i < (starter / 2); i++) {
-							File file = listOfFiles[i];
-							if (file.isFile()) {
-								DirectoryModel.set_file_name(file.getName());
-
-								CommunicationController.setShiTomasiScenePt(CommunicationController.keypoint_extraction(
-										DirectoryModel.getDir() + "/shitomasi/" + DirectoryModel.get_file_name(),
-										"shi_tomasi"));
-								CommunicationController.matched_corners_in_dataset(
-										CommunicationController.getShiTomasiScenePt(),
-										CommunicationController.getShiTomasiObjPt(), "shi_tomasi");
-
-								temp = Double.toString(CommunicationController.computeAccuracy());
-
-								if (Double.valueOf(temp) >= 90 && Double.valueOf(temp) <= 100) {
-									shitomasiCount++;
-									System.out.println("Detected: " + shitomasiCount);
-								} else {
-									System.out.println("No Detected");
-								}
-								System.out.println(file.getName() + ":" + temp);
-							} else if (file.isDirectory()) {
-								System.out.println("Directory " + file.getName());
-							}
-						}
-						doneDetection = true;
 						break;
 					case "HSC":
 						send(msg);
-						CommunicationController.setShiTomasiObjPt(CommunicationController.keypoint_extraction(
-								ObjectModel.get_path() + "/shitomasi/" + ObjectModel.get_file_name(), "shi_tomasi"));
-						starter = listOfFiles.length;
-						for (int i = ((starter / 3) + (starter / 3)); i < starter; i++) {
-							File file = listOfFiles[i];
-							if (file.isFile()) {
-								DirectoryModel.set_file_name(file.getName());
-
-								CommunicationController.setShiTomasiScenePt(CommunicationController.keypoint_extraction(
-										DirectoryModel.getDir() + "/shitomasi/" + DirectoryModel.get_file_name(),
-										"shi_tomasi"));
-								CommunicationController.matched_corners_in_dataset(
-										CommunicationController.getShiTomasiScenePt(),
-										CommunicationController.getShiTomasiObjPt(), "shi_tomasi");
-
-								temp = Double.toString(CommunicationController.computeAccuracy());
-
-								if (Double.valueOf(temp) >= 90 && Double.valueOf(temp) <= 100) {
-									shitomasiCount++;
-									System.out.println("Detected: " + shitomasiCount);
-								} else {
-									System.out.println("No Detected");
-								}
-								System.out.println(file.getName() + ":" + temp);
-							} else if (file.isDirectory()) {
-								System.out.println("Directory " + file.getName());
-							}
-						}
-						doneDetection = true;
 						break;
 					default:
 						System.out.println("System error, please restart");
